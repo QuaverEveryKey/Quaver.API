@@ -29,7 +29,7 @@ namespace Quaver.API.Replays
         /// <summary>
         ///     The game mode this replay is for.
         /// </summary>
-        public GameMode Mode { get; set; }
+        public int KeyCount { get; set; }
 
         /// <summary>
         ///     All of the replay frames.
@@ -135,10 +135,10 @@ namespace Quaver.API.Replays
         /// <param name="name"></param>
         /// <param name="mods"></param>
         /// <param name="md5"></param>
-        public Replay(GameMode mode, string name, ModIdentifier mods, string md5)
+        public Replay(int keyCount, string name, ModIdentifier mods, string md5)
         {
             PlayerName = name;
-            Mode = mode;
+            KeyCount = keyCount;
             Mods = mods;
             MapMd5 = md5;
             Frames = new List<ReplayFrame>();
@@ -172,7 +172,7 @@ namespace Quaver.API.Replays
                     // use the time played.
                     Date = new DateTime(1970, 1, 1, 0, 0, 0, 0).AddMilliseconds(TimePlayed);
 
-                    Mode = (GameMode)br.ReadInt32();
+                    KeyCount = br.ReadInt32();
 
                     // The mirror mod is the 32-nd bit, which, when read as an Int32, results in a negative number.
                     // To fix this, that case is handled separately.
@@ -244,7 +244,7 @@ namespace Quaver.API.Replays
                     var (tTime, (tKeys, _)) = new Drain<char>(frame, '|');
 
                     if (int.TryParse(tTime, out var time) &&
-                        Enum.TryParse(tKeys.ToString(), out ReplayKeyPressState keys))
+                        ulong.TryParse(tKeys.ToString(), out var keys))
                         Frames.Add(new ReplayFrame(time, keys));
                 }
             }
@@ -275,7 +275,7 @@ namespace Quaver.API.Replays
                 bw.Write(PlayerName);
                 bw.Write(DateTime.Now.ToString(CultureInfo.InvariantCulture));
                 bw.Write(TimePlayed);
-                bw.Write((int)Mode);
+                bw.Write(KeyCount);
                 // This check is to keep compatibility with older clients.
                 // We only want to write a 64-bit integer for replays with newer mods activated
                 if (ReplayVersion == "0.0.1" || Mods < ModIdentifier.Speed105X)
@@ -302,7 +302,7 @@ namespace Quaver.API.Replays
         /// <summary>
         ///     Adds a frame to the replay.
         /// </summary>
-        public void AddFrame(int time, ReplayKeyPressState keys) => Frames.Add(new ReplayFrame(time, keys));
+        public void AddFrame(int time, ulong keys) => Frames.Add(new ReplayFrame(time, keys));
 
         /// <summary>
         ///    Populates the replay header properties from a score processor.
@@ -347,7 +347,7 @@ namespace Quaver.API.Replays
             nonCombined = nonCombined.OrderBy(x => x.Time).ToList();
 
             // Global replay state so we can loop through in track it.
-            ReplayKeyPressState state = 0;
+            ulong state = 0;
 
             // Add beginning frame w/ no press state. (-10000 just to be on the safe side.)
             replay.Frames.Add(new ReplayFrame(-10000, 0));
@@ -383,63 +383,74 @@ namespace Quaver.API.Replays
         /// </summary>
         /// <param name="lane"></param>
         /// <returns></returns>
-        public static ReplayKeyPressState KeyLaneToPressState(int lane)
-        {
-            switch (lane)
-            {
-                case 1:
-                    return ReplayKeyPressState.K1;
-                case 2:
-                    return ReplayKeyPressState.K2;
-                case 3:
-                    return ReplayKeyPressState.K3;
-                case 4:
-                    return ReplayKeyPressState.K4;
-                case 5:
-                    return ReplayKeyPressState.K5;
-                case 6:
-                    return ReplayKeyPressState.K6;
-                case 7:
-                    return ReplayKeyPressState.K7;
-                case 8:
-                    return ReplayKeyPressState.K8;
-                case 9:
-                    return ReplayKeyPressState.K9;
-                default:
-                    throw new ArgumentException("Lane specified must be between 1 and 7");
-            }
-        }
+        public static ulong KeyLaneToPressState(int lane) => 1UL << (lane - 1);
+        // {
+        //     switch (lane)
+        //     {
+        //         case 1:
+        //             return ReplayKeyPressState.K1;
+        //         case 2:
+        //             return ReplayKeyPressState.K2;
+        //         case 3:
+        //             return ReplayKeyPressState.K3;
+        //         case 4:
+        //             return ReplayKeyPressState.K4;
+        //         case 5:
+        //             return ReplayKeyPressState.K5;
+        //         case 6:
+        //             return ReplayKeyPressState.K6;
+        //         case 7:
+        //             return ReplayKeyPressState.K7;
+        //         case 8:
+        //             return ReplayKeyPressState.K8;
+        //         case 9:
+        //             return ReplayKeyPressState.K9;
+        //         default:
+        //             throw new ArgumentException("Lane specified must be between 1 and 7");
+        //     }
+        // }
 
         /// <summary>
         ///     Converts a key press state to a list of lanes that are active.
         /// </summary>
         /// <param name="keys"></param>
         /// <returns></returns>
-        public static List<int> KeyPressStateToLanes(ReplayKeyPressState keys)
+        public static List<int> KeyPressStateToLanes(ulong keys)
         {
             var lanes = new List<int>();
 
-            if (keys.HasFlag(ReplayKeyPressState.K1))
-                lanes.Add(0);
-            if (keys.HasFlag(ReplayKeyPressState.K2))
-                lanes.Add(1);
-            if (keys.HasFlag(ReplayKeyPressState.K3))
-                lanes.Add(2);
-            if (keys.HasFlag(ReplayKeyPressState.K4))
-                lanes.Add(3);
-            if (keys.HasFlag(ReplayKeyPressState.K5))
-                lanes.Add(4);
-            if (keys.HasFlag(ReplayKeyPressState.K6))
-                lanes.Add(5);
-            if (keys.HasFlag(ReplayKeyPressState.K7))
-                lanes.Add(6);
-            if (keys.HasFlag(ReplayKeyPressState.K8))
-                lanes.Add(7);
-            if (keys.HasFlag(ReplayKeyPressState.K9))
-                lanes.Add(8);
+            for (var i = 0; i < 64; i++)
+            {
+                if ((keys & (1UL << i)) != 0)
+                    lanes.Add(i);
+            }
 
-             return lanes;
+            return lanes;
         }
+        // {
+        //     var lanes = new List<int>();
+
+        //     if (keys.HasFlag(ReplayKeyPressState.K1))
+        //         lanes.Add(0);
+        //     if (keys.HasFlag(ReplayKeyPressState.K2))
+        //         lanes.Add(1);
+        //     if (keys.HasFlag(ReplayKeyPressState.K3))
+        //         lanes.Add(2);
+        //     if (keys.HasFlag(ReplayKeyPressState.K4))
+        //         lanes.Add(3);
+        //     if (keys.HasFlag(ReplayKeyPressState.K5))
+        //         lanes.Add(4);
+        //     if (keys.HasFlag(ReplayKeyPressState.K6))
+        //         lanes.Add(5);
+        //     if (keys.HasFlag(ReplayKeyPressState.K7))
+        //         lanes.Add(6);
+        //     if (keys.HasFlag(ReplayKeyPressState.K8))
+        //         lanes.Add(7);
+        //     if (keys.HasFlag(ReplayKeyPressState.K9))
+        //         lanes.Add(8);
+
+        //      return lanes;
+        // }
 
         /// <summary>
         ///     Converts all replay frames to a string
@@ -470,7 +481,7 @@ namespace Quaver.API.Replays
         {
             var keyPresses = new List<ReplayKeyPressInfo>();
 
-            ReplayKeyPressState previousKeys = 0;
+            ulong previousKeys = 0;
 
             foreach (var frame in Frames)
             {
@@ -511,7 +522,7 @@ namespace Quaver.API.Replays
         /// <returns></returns>
         public string GetMd5(string frames)
         {
-            return CryptoHelper.StringToMd5($"{ReplayVersion}-{TimePlayed}-{MapMd5}-{PlayerName}-{(int) Mode}-" +
+            return CryptoHelper.StringToMd5($"{ReplayVersion}-{TimePlayed}-{MapMd5}-{PlayerName}-{KeyCount}-" +
                                             $"{(int) Mods}-{Score}-{Accuracy}-{MaxCombo}-{CountMarv}-{CountPerf}-" +
                                             $"{CountGreat}-{CountGood}-{CountOkay}-{CountMiss}-{PauseCount}-{RandomizeModifierSeed}-{frames}");
         }

@@ -62,7 +62,22 @@ namespace Quaver.API.Maps
         /// <summary>
         ///     The game mode for this map
         /// </summary>
-        public GameMode Mode { get; set; }
+        // public GameMode Mode { get; set; }
+
+        public const int MAX_KEY_COUNT = 64;
+        private int keyCount = 4;
+        public int KeyCount
+        {
+            get => keyCount;
+            set
+            {
+                if (value == 0 || value > MAX_KEY_COUNT)
+                {
+                    throw new ArgumentOutOfRangeException("KeyCount must be between 1 and " + MAX_KEY_COUNT);
+                }
+                keyCount = value;
+            }
+        }
 
         /// <summary>
         ///     The title of the song
@@ -131,7 +146,7 @@ namespace Quaver.API.Maps
         /// <summary>
         ///     If true, the map will have a +1 scratch key, allowing for 5/8 key play
         /// </summary>
-        public bool HasScratchKey { get; set; }
+        // public bool HasScratchKey { get; set; }
 
         /// <summary>
         ///     EditorLayer .qua data
@@ -211,7 +226,8 @@ namespace Quaver.API.Maps
                    && BannerFile == other.BannerFile
                    && MapId == other.MapId
                    && MapSetId == other.MapSetId
-                   && Mode == other.Mode
+                   // && Mode == other.Mode
+                   && keyCount == other.keyCount
                    && Title == other.Title
                    && Artist == other.Artist
                    && Source == other.Source
@@ -226,7 +242,7 @@ namespace Quaver.API.Maps
                    && InitialScrollVelocity == other.InitialScrollVelocity
                    && BPMDoesNotAffectScrollVelocity == other.BPMDoesNotAffectScrollVelocity
                    && LegacyLNRendering == other.LegacyLNRendering
-                   && HasScratchKey == other.HasScratchKey
+                   // && HasScratchKey == other.HasScratchKey
                    && HitObjects.SequenceEqual(other.HitObjects, HitObjectInfo.ByValueComparer)
                    && CustomAudioSamples.SequenceEqual(other.CustomAudioSamples, CustomAudioSampleInfo.ByValueComparer)
                    && SoundEffects.SequenceEqual(other.SoundEffects, SoundEffectInfo.ByValueComparer)
@@ -396,8 +412,8 @@ namespace Quaver.API.Maps
                 return false;
 
             // Check if the mode is actually valid
-            if (!Enum.IsDefined(typeof(GameMode), Mode))
-                return false;
+            // if (!Enum.IsDefined(typeof(GameMode), Mode))
+            //     return false;
 
             // Check that sound effects are valid.
             foreach (var info in SoundEffects)
@@ -510,27 +526,27 @@ namespace Quaver.API.Maps
         ///    This translates mode to key count.
         /// </summary>
         /// <returns></returns>
-        public int GetKeyCount(bool includeScratch = true)
-        {
-            int count;
+        // public int GetKeyCount(bool includeScratch = true)
+        // {
+        //     int count;
 
-            switch (Mode)
-            {
-                case GameMode.Keys4:
-                    count = 4;
-                    break;
-                case GameMode.Keys7:
-                    count = 7;
-                    break;
-                default:
-                    throw new InvalidEnumArgumentException();
-            }
+        //     switch (Mode)
+        //     {
+        //         case GameMode.Keys4:
+        //             count = 4;
+        //             break;
+        //         case GameMode.Keys7:
+        //             count = 7;
+        //             break;
+        //         default:
+        //             throw new InvalidEnumArgumentException();
+        //     }
 
-            if (HasScratchKey && includeScratch)
-                count++;
+        //     if (HasScratchKey && includeScratch)
+        //         count++;
 
-            return count;
-        }
+        //     return count;
+        // }
 
         /// <summary>
         ///     Finds the most common BPM in a Qua object.
@@ -651,15 +667,16 @@ namespace Quaver.API.Maps
                 qua.ApplyMods(mods);
             }
 
-            switch (Mode)
-            {
-                case GameMode.Keys4:
-                    return new DifficultyProcessorKeys(qua, new StrainConstantsKeys(), mods);
-                case GameMode.Keys7:
-                    return new DifficultyProcessorKeys(qua, new StrainConstantsKeys(), mods);
-                default:
-                    throw new InvalidEnumArgumentException();
-            }
+            // switch (Mode)
+            // {
+            //     case GameMode.Keys4:
+            //         return new DifficultyProcessorKeys(qua, new StrainConstantsKeys(), mods);
+            //     case GameMode.Keys7:
+            //         return new DifficultyProcessorKeys(qua, new StrainConstantsKeys(), mods);
+            //     default:
+            //         throw new InvalidEnumArgumentException();
+            // }
+            return new DifficultyProcessorKeys(qua, new StrainConstantsKeys(), mods);
         }
 
         /// <summary>
@@ -754,7 +771,7 @@ namespace Quaver.API.Maps
 
             var newHitObjects = new List<HitObjectInfo>();
 
-            var keyCount = GetKeyCount();
+            // var keyCount = GetKeyCount();
 
             // An array indicating whether the currently processed HitObject is the first in its lane.
             var firstInLane = new bool[keyCount];
@@ -766,11 +783,11 @@ namespace Quaver.API.Maps
                 var currentObject = HitObjects[i];
 
                 // The scratch lane (the last one in Quaver) should not be affected by Inverse.
-                if (HasScratchKey && currentObject.Lane == keyCount)
-                {
-                    newHitObjects.Add(currentObject);
-                    continue;
-                }
+                // if (HasScratchKey && currentObject.Lane == keyCount)
+                // {
+                //     newHitObjects.Add(currentObject);
+                //     continue;
+                // }
 
                 // Find the next and second next hit object in the lane.
                 HitObjectInfo nextObjectInLane = null, secondNextObjectInLane = null;
@@ -949,12 +966,12 @@ namespace Quaver.API.Maps
             RandomizeModifierSeed = seed;
 
             var values = new List<int>();
-            values.AddRange(Enumerable.Range(0, GetKeyCount(false)).Select(x => x + 1));
+            values.AddRange(Enumerable.Range(0, keyCount).Select(x => x + 1));
 
             values.Shuffle(new Random(seed));
 
-            if (HasScratchKey)
-                values.Add(GetKeyCount());
+            // if (HasScratchKey)
+            //     values.Add(GetKeyCount());
 
             for (var i = 0; i < HitObjects.Count; i++)
             {
@@ -969,23 +986,24 @@ namespace Quaver.API.Maps
         /// </summary>
         public void MirrorHitObjects()
         {
-            var keyCount = GetKeyCount();
+            // var keyCount = GetKeyCount();
 
             for (var i = 0; i < HitObjects.Count; i++)
             {
                 var temp = HitObjects[i];
 
-                if (HasScratchKey)
-                {
-                    // The scratch lane (which is the last lane in Quaver) should not be mirrored.
-                    if (temp.Lane == keyCount)
-                        continue;
-                    temp.Lane = keyCount - temp.Lane;
-                }
-                else
-                {
-                    temp.Lane = keyCount - temp.Lane + 1;
-                }
+                // if (HasScratchKey)
+                // {
+                //     // The scratch lane (which is the last lane in Quaver) should not be mirrored.
+                //     if (temp.Lane == keyCount)
+                //         continue;
+                //     temp.Lane = keyCount - temp.Lane;
+                // }
+                // else
+                // {
+                //     temp.Lane = keyCount - temp.Lane + 1;
+                // }
+                temp.Lane = keyCount - temp.Lane + 1;
 
                 HitObjects[i] = temp;
             }

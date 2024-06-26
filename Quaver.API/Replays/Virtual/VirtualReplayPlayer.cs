@@ -99,34 +99,10 @@ namespace Quaver.API.Replays.Virtual
             map.HitObjects.ForEach(x => ActiveHitObjects.Add(x));
 
             // Add virtual key bindings based on the game mode of the replay.
-            switch (Map.Mode)
+            InputKeyStore = new List<VirtualReplayKeyBinding>();
+            for (var i = 0; i < Map.KeyCount; i++)
             {
-                case GameMode.Keys4:
-                    InputKeyStore = new List<VirtualReplayKeyBinding>()
-                    {
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K1),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K2),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K3),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K4),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K5),
-                    };
-                    break;
-                case GameMode.Keys7:
-                    InputKeyStore = new List<VirtualReplayKeyBinding>()
-                    {
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K1),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K2),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K3),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K4),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K5),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K6),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K7),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K8),
-                        new VirtualReplayKeyBinding(ReplayKeyPressState.K9),
-                    };
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                InputKeyStore.Add(new VirtualReplayKeyBinding(1UL << i));
             }
         }
 
@@ -223,8 +199,8 @@ namespace Quaver.API.Replays.Virtual
                 var inputLane = key;
 
                 // Allow scratch key to be dual-binded to lane 8
-                if (Map.HasScratchKey && Map.Mode == GameMode.Keys7 && key + 1 == 9)
-                    inputLane--;
+                // if (Map.HasScratchKey && Map.Mode == GameMode.Keys7 && key + 1 == 9)
+                //     inputLane--;
 
                 // This key was uniquely pressed during this frame.
                 if (currentFramePressed.Contains(key))

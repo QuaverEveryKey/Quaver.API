@@ -93,12 +93,12 @@ namespace Quaver.API.Maps.AutoMod
                 return;
 
             // Set only contains 1 unique game mode.
-            if (Maps.Select(x => x.Mode).Distinct().Count() == 1)
+            if (Maps.Select(x => x.KeyCount).Distinct().Count() == 1)
                 return;
 
             foreach (var map in Maps)
             {
-                var modeString = ModeHelper.ToShortHand(map.Mode).ToLower();
+                var modeString = ModeHelper.ToShortHand(map.KeyCount).ToLower();
 
                 if (map.DifficultyName.ToLower().Contains(modeString))
                     continue;

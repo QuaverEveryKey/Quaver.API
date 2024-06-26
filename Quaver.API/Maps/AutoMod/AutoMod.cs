@@ -126,7 +126,7 @@ namespace Quaver.API.Maps.AutoMod
         {
             var previousNoteInColumns = new List<HitObjectInfo>();
 
-            for (var i = 0; i < Qua.GetKeyCount(); i++)
+            for (var i = 0; i < Qua.KeyCount; i++)
                 previousNoteInColumns.Add(null);
 
             for (var i = 0; i < Qua.HitObjects.Count; i++)
@@ -273,7 +273,7 @@ namespace Quaver.API.Maps.AutoMod
             if (Qua.HitObjects.Count <= 1)
                 return;
 
-            var replay = new Replay(Qua.Mode, "", ModIdentifier.Autoplay, "");
+            var replay = new Replay(Qua.KeyCount, "", ModIdentifier.Autoplay, "");
             replay = Replay.GeneratePerfectReplayKeys(replay, Qua);
 
             var virtualReplayPlayer = new VirtualReplayPlayer(replay, Qua);

@@ -293,7 +293,7 @@ namespace Quaver.API.Maps.Parsers
                                 case "CircleSize":
                                     KeyCount = int.Parse(value, CultureInfo.InvariantCulture);
 
-                                    if (KeyCount != 4 && KeyCount != 7 && KeyCount != 5 && KeyCount != 8)
+                                    if (KeyCount < 1 || KeyCount > 64)
                                         IsValid = false;
                                     break;
                                 case "OverallDifficulty":
@@ -480,22 +480,23 @@ namespace Quaver.API.Maps.Parsers
             };
 
             // Get the correct game mode based on the amount of keys the map has.
-            switch (KeyCount)
-            {
-                case 4:
-                    qua.Mode = GameMode.Keys4;
-                    break;
-                case 7:
-                    qua.Mode = GameMode.Keys7;
-                    break;
-                case 8:
-                    qua.Mode = GameMode.Keys7;
-                    qua.HasScratchKey = true;
-                    break;
-                default:
-                    qua.Mode = (GameMode)(-1);
-                    break;
-            }
+            // switch (KeyCount)
+            // {
+            //     case 4:
+            //         qua.Mode = GameMode.Keys4;
+            //         break;
+            //     case 7:
+            //         qua.Mode = GameMode.Keys7;
+            //         break;
+            //     case 8:
+            //         qua.Mode = GameMode.Keys7;
+            //         qua.HasScratchKey = true;
+            //         break;
+            //     default:
+            //         qua.Mode = (GameMode)(-1);
+            //         break;
+            // }
+            qua.KeyCount = KeyCount;
 
             foreach (var path in CustomAudioSamples)
             {
@@ -562,13 +563,13 @@ namespace Quaver.API.Maps.Parsers
 
                 // osu! considers objects in lane 1 to be the special key, Quaver considers it to be the last lane.
                 // Lane 8 on 7K+1
-                if (qua.HasScratchKey)
-                {
-                    if (keyLane == 1)
-                        keyLane = KeyCount;
-                    else
-                        keyLane--;
-                }
+                // if (qua.HasScratchKey)
+                // {
+                //     if (keyLane == 1)
+                //         keyLane = KeyCount;
+                //     else
+                //         keyLane--;
+                // }
 
                 // Add HitObjects to the list depending on the object type
                 if (hitObject.Type.HasFlag(HitObjectType.Circle))

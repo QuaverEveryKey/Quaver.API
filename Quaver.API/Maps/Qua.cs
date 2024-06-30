@@ -65,7 +65,7 @@ namespace Quaver.API.Maps
         // public GameMode Mode { get; set; }
 
         public const int MAX_KEY_COUNT = 64;
-        private int keyCount = 4;
+        private int keyCount = 0;
         public int KeyCount
         {
             get => keyCount;
@@ -1111,6 +1111,9 @@ namespace Quaver.API.Maps
                     info.Volume = 100;
                 qua.SoundEffects[i] = info;
             }
+
+            if (qua.keyCount == 0)
+                qua.KeyCount = qua.HitObjects.Max(h => h.Lane);
         }
 
         /// <summary>
